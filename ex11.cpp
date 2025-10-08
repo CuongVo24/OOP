@@ -7,7 +7,6 @@ void sortArray(T arr[], int n) {
     for (int i = 0; i < n - 1; i++) {
         for (int j = 0; j < n - i - 1; j++) {
             if (arr[j] > arr[j + 1]) {
-                // Swap
                 T temp = arr[j];
                 arr[j] = arr[j + 1];
                 arr[j + 1] = temp;
@@ -26,9 +25,9 @@ void printArray(T arr[], int n) {
 }
 
 int main() {
-    int intArr[] = {5, 2, 9, 1, 5, 6};
+    int intArr[] = {5, 2, 10, 1, 5, 6};
     float floatArr[] = {3.2, 1.5, 4.8, 2.9};
-    char charArr[] = {'z', 'b', 'a', 'k'};
+    char charArr[] = {'z', 'b', 'y', 'k'};
 
     int n1 = sizeof(intArr) / sizeof(intArr[0]);
     int n2 = sizeof(floatArr) / sizeof(floatArr[0]);
