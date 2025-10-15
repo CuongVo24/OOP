@@ -4,6 +4,12 @@
 #include <stdexcept> // cung cấp các lớp ngoại lệ chuẩn
 using namespace std;
 
+
+int gcd(int a, int b) {
+    if (b == 0) return a;
+    return gcd(b, a % b);
+}
+
 // Chuẩn hóa phân số: đảm bảo mẫu > 0 và rút gọn
 void Fraction::normalize() {
     if (denominator == 0)
@@ -28,7 +34,7 @@ Fraction::Fraction(int num, int denom) : numerator(num), denominator(denom) {
 
 Fraction::Fraction(int value) : numerator(value), denominator(1) {}
 
-Fraction::Fraction(const string &str) {
+Fraction::Fraction(const string& str) {
     stringstream ss(str);
     char slash;
     ss >> numerator >> slash >> denominator;
@@ -37,7 +43,7 @@ Fraction::Fraction(const string &str) {
     normalize();
 }
 
-Fraction::Fraction(const Fraction &other)
+Fraction::Fraction(const Fraction& other)
     : numerator(other.numerator), denominator(other.denominator) {}
 
 // --- Getters / Setters ---
@@ -84,13 +90,13 @@ Fraction Fraction::inverse() const {
     return Fraction(denominator, numerator);
 }
 
-Fraction Fraction::add(const Fraction &other) const {
+Fraction Fraction::add(const Fraction& other) const {
     int num = numerator * other.denominator + other.numerator * denominator;
     int den = denominator * other.denominator;
     return Fraction(num, den);
 }
 
-int Fraction::compare(const Fraction &other) const {
+int Fraction::compare(const Fraction& other) const {
     long long lhs = static_cast<long long>(numerator) * other.denominator;
     long long rhs = static_cast<long long>(other.numerator) * denominator;
     if (lhs == rhs) return 0;
