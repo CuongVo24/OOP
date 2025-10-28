@@ -3,7 +3,7 @@
 
 using namespace std;
 
-// --- Định nghĩa lớp Ngay ---
+// Định nghĩa lớp Ngày
 class Ngay
 {
 private:
