@@ -97,7 +97,7 @@ public:
     }
 };
 
-// --- Khởi tạo các thành viên tĩnh bên ngoài lớp ---
+// Khởi tạo các thành viên tĩnh bên ngoài lớp
 // Khởi tạo điểm TB cao nhất là -1 (thấp hơn mọi điểm khả thi)
 float HocSinh::DiemTBCaoNhat = -1.0;
 // Khởi tạo đối tượng tĩnh (sẽ gọi hàm dựng mặc định)
