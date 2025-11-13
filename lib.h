@@ -1,3 +1,4 @@
+
 #ifndef LIB_H
 #define LIB_H
 
@@ -10,6 +11,7 @@ private:
     int size;
 
 public:
+
     // Constructors & destructor
     Array(int n = 0, const int* arr = nullptr);
     Array(const Array& other);
@@ -17,6 +19,7 @@ public:
     virtual ~Array();
 
     // Accessors
+    int* getData() const;
     int getSize() const;
     int getValue(int index) const;
     virtual void setValue(int index, int value);
