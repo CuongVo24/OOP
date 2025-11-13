@@ -5,7 +5,7 @@
 using namespace std;
 
 class Array {
-protected:
+private:
     int* data;
     int size;
 
@@ -29,7 +29,7 @@ public:
 };
 
 class HistogramArray : public Array {
-protected:
+private:
     int* histogram;
     int histSize; // giá trị tối đa + 1 (ví dụ 0-4 -> 5)
 
