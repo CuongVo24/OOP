@@ -1,11 +1,15 @@
 #include "lib.h"
 
 // ================= Array =================
+
+
+
 Array::Array(int n, const int* arr) : size(n) {
     data = (size > 0) ? new int[size] : nullptr;
     if (arr != nullptr) {
         for (int i = 0; i < size; ++i) data[i] = arr[i];
-    } else {
+    }
+    else {
         for (int i = 0; i < size; ++i) data[i] = 0;
     }
 }
@@ -30,6 +34,7 @@ Array::~Array() {
 }
 
 int Array::getSize() const { return size; }
+int* Array::getData() const { return data; }
 
 int Array::getValue(int index) const {
     if (index < 0 || index >= size) throw out_of_range("Index out of range");
@@ -86,8 +91,8 @@ HistogramArray::~HistogramArray() {
 
 void HistogramArray::computeHist() {
     for (int i = 0; i < histSize; ++i) histogram[i] = 0;
-    for (int i = 0; i < size; ++i) {
-        int v = data[i];
+    for (int i = 0; i < getSize(); ++i) {
+        int v = getData()[i];
         if (v >= 0 && v < histSize)
             histogram[v]++;
     }
@@ -101,10 +106,10 @@ void HistogramArray::displayHist() const {
 
 // Override setValue để tự động cập nhật histogram
 void HistogramArray::setValue(int index, int value) {
-    if (index < 0 || index >= size) throw out_of_range("Index out of range");
+    if (index < 0 || index >= getSize()) throw out_of_range("Index out of range");
 
-    int oldVal = data[index];
-    data[index] = value;
+    int oldVal = getData()[index];
+    getData()[index] = value;
 
     // cập nhật histogram nếu trong phạm vi
     if (oldVal >= 0 && oldVal < histSize) histogram[oldVal]--;
@@ -113,7 +118,7 @@ void HistogramArray::setValue(int index, int value) {
 
 // Override operator[]
 int& HistogramArray::operator[](int index) {
-    if (index < 0 || index >= size) throw out_of_range("Index out of range");
+    if (index < 0 || index >= getSize()) throw out_of_range("Index out of range");
     // Trả về tham chiếu có thể sửa — ta phải cập nhật lại histogram khi đổi
-    return data[index];
+    return getData()[index];
 }
