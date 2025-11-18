@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstring>
-#include <algorithm> // max
+#include <algorithm>
 #include "SLList.h"
 
 using namespace std;
