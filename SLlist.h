@@ -233,6 +233,7 @@ void SLList<T>::RemoveTail()
     }
     delete _pTail;
     _pTail = p;
+    _pTail->_pNext = nullptr;
     _n--;
 }
 
