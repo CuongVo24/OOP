@@ -132,6 +132,13 @@ public:
         return os;
     }
 
+    friend istream& operator>>(istream& is, SoNguyenLon& snl) {
+        char buffer[10000];
+        is >> buffer;
+        snl = SoNguyenLon(buffer);
+        return is;
+    }
+
     SoNguyenLon operator+(const SoNguyenLon& other) {
         SoNguyenLon kq;
 
