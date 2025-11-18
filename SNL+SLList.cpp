@@ -1,151 +1,165 @@
 #include <iostream>
 #include <cstring>
-#include <cstdio>
-#include "SLList.h" 
+#include <algorithm> // max
+#include "SLList.h"
 
 using namespace std;
 
 class SoNguyenLon {
 private:
     SLList<int> chuSo;
+    int dau;
 
-void trim() {
-        // Giữ lại ít nhất 1 số 0 nếu kết quả là 0
+    void trim() {
         while (chuSo.size() > 1 && chuSo.back() == 0) {
             chuSo.RemoveTail();
         }
     }
-public:
-    SoNguyenLon() {}
 
-    SoNguyenLon(const char* s) {
-        int len = strlen(s);
-        for (int i = len - 1; i >= 0; i--) {
-            if (s[i] >= '0' && s[i] <= '9') {
-                chuSo.push_back(s[i] - '0');
-            }
-        }
-        if (chuSo.empty()) chuSo.push_back(0);
-    }
+    int compareAbs(const SoNguyenLon& other) const {
+        int n1 = this->chuSo.size();
+        int n2 = other.chuSo.size();
+        if (n1 != n2) return (n1 > n2) ? 1 : -1;
 
-    SoNguyenLon(long long n) {
-        if (n == 0) chuSo.push_back(0);
-        while (n > 0) {
-            chuSo.push_back(n % 10);
-            n /= 10;
-        }
-    }
-
-
-    friend ostream& operator<<(ostream& os, SoNguyenLon& snl) {
-        int n = snl.chuSo.size();
-        if (n == 0) {
-            os << "0";
-            return os;
-        }
-
-        int* temp = new int[n];
+        int* a1 = new int[n1];
+        int* a2 = new int[n2];
         int i = 0;
-        
-        for (SLList<int>::Iterator it = snl.chuSo.begin(); it != snl.chuSo.end(); ++it) {
-            temp[i++] = *it;
+
+        auto it1 = const_cast<SLList<int>&>(this->chuSo).begin();
+        for (int k = 0; k < n1; ++k, ++it1) a1[k] = *it1;
+
+        auto it2 = const_cast<SLList<int>&>(other.chuSo).begin();
+        for (int k = 0; k < n2; ++k, ++it2) a2[k] = *it2;
+
+        int result = 0;
+        for (int k = n1 - 1; k >= 0; k--) {
+            if (a1[k] > a2[k]) { result = 1; break; }
+            if (a1[k] < a2[k]) { result = -1; break; }
         }
 
-        for (int j = n - 1; j >= 0; j--) {
-            os << temp[j];
+        delete[] a1;
+        delete[] a2;
+        return result;
+    }
+
+    SLList<int> subtractAbs(const SLList<int>& lon, const SLList<int>& be) const {
+        SLList<int> ketQua;
+        auto itL = const_cast<SLList<int>&>(lon).begin();
+        auto itB = const_cast<SLList<int>&>(be).begin();
+        auto endL = const_cast<SLList<int>&>(lon).end();
+        auto endB = const_cast<SLList<int>&>(be).end();
+
+        int muon = 0;
+        while (itL != endL) {
+            int valL = *itL;
+            int valB = (itB != endB) ? *itB : 0;
+
+            int hieu = valL - valB - muon;
+            if (hieu < 0) {
+                hieu += 10;
+                muon = 1;
+            }
+            else {
+                muon = 0;
+            }
+
+            ketQua.push_back(hieu);
+
+            ++itL;
+            if (itB != endB) ++itB;
         }
-
-        delete[] temp;
-        
-        return os;
+        return ketQua;
     }
 
-    friend istream& operator>>(istream& is, SoNguyenLon& snl) {
-        char buffer[1000];
-        is >> buffer;
-        snl = SoNguyenLon(buffer);
-        return is;
-    }
-
-    SoNguyenLon operator+(SoNguyenLon& other) {
-        SoNguyenLon ketQua;
-        
-        SLList<int>::Iterator it1 = this->chuSo.begin();
-        SLList<int>::Iterator it2 = other.chuSo.begin();
-        SLList<int>::Iterator end1 = this->chuSo.end();
-        SLList<int>::Iterator end2 = other.chuSo.end();
+    SLList<int> addAbs(const SLList<int>& a, const SLList<int>& b) const {
+        SLList<int> ketQua;
+        auto it1 = const_cast<SLList<int>&>(a).begin();
+        auto it2 = const_cast<SLList<int>&>(b).begin();
+        auto end1 = const_cast<SLList<int>&>(a).end();
+        auto end2 = const_cast<SLList<int>&>(b).end();
 
         int nho = 0;
         while (it1 != end1 || it2 != end2) {
             int val1 = (it1 != end1) ? *it1 : 0;
             int val2 = (it2 != end2) ? *it2 : 0;
-            
             int tong = val1 + val2 + nho;
-            ketQua.chuSo.push_back(tong % 10);
+            ketQua.push_back(tong % 10);
             nho = tong / 10;
 
             if (it1 != end1) ++it1;
             if (it2 != end2) ++it2;
         }
-        if (nho > 0) ketQua.chuSo.push_back(nho);
-        
-        return ketQua.trim();
+        if (nho > 0) ketQua.push_back(nho);
+        return ketQua;
     }
 
+public:
+    SoNguyenLon() : dau(1) { chuSo.push_back(0); }
 
-    bool operator<(SoNguyenLon& other) {
-        int n1 = this->chuSo.size();
-        int n2 = other.chuSo.size();
-        
-        if (n1 != n2) return n1 < n2;
-
-        int* arr1 = new int[n1];
-        int* arr2 = new int[n2];
-        
+    SoNguyenLon(const char* s) {
         int i = 0;
-        for (SLList<int>::Iterator it = this->chuSo.begin(); it != this->chuSo.end(); ++it) arr1[i++] = *it;
-        
-        i = 0;
-        for (SLList<int>::Iterator it = other.chuSo.begin(); it != other.chuSo.end(); ++it) arr2[i++] = *it;
-
-        bool result = false;
-        for (int j = n1 - 1; j >= 0; j--) {
-            if (arr1[j] != arr2[j]) {
-                result = arr1[j] < arr2[j];
-                goto CleanUp;
-            }
+        dau = 1;
+        if (s[0] == '-') {
+            dau = -1;
+            i = 1;
+        }
+        else if (s[0] == '+') {
+            i = 1;
         }
 
-    CleanUp:
-        delete[] arr1;
-        delete[] arr2;
-        return result;
+        int len = strlen(s);
+        for (int j = len - 1; j >= i; j--) {
+            if (s[j] >= '0' && s[j] <= '9') {
+                chuSo.push_back(s[j] - '0');
+            }
+        }
+        if (chuSo.empty()) chuSo.push_back(0);
+        trim();
+        if (chuSo.size() == 1 && chuSo.back() == 0) dau = 1;
+    }
+
+    friend ostream& operator<<(ostream& os, SoNguyenLon& snl) {
+        if (snl.dau == -1) os << "-";
+
+        int n = snl.chuSo.size();
+        int* temp = new int[n];
+        int i = 0;
+        for (auto it = snl.chuSo.begin(); it != snl.chuSo.end(); ++it) temp[i++] = *it;
+
+        for (int j = n - 1; j >= 0; j--) os << temp[j];
+
+        delete[] temp;
+        return os;
+    }
+
+    SoNguyenLon operator+(const SoNguyenLon& other) {
+        SoNguyenLon kq;
+
+        if (this->dau == other.dau) {
+            kq.dau = this->dau;
+            kq.chuSo = addAbs(this->chuSo, other.chuSo);
+        }
+        else {
+            int cmp = compareAbs(other);
+            if (cmp >= 0) {
+                kq.dau = this->dau;
+                kq.chuSo = subtractAbs(this->chuSo, other.chuSo);
+            }
+            else {
+                kq.dau = other.dau;
+                kq.chuSo = subtractAbs(other.chuSo, this->chuSo);
+            }
+        }
+        kq.trim();
+
+        if (kq.chuSo.size() == 1 && kq.chuSo.back() == 0) kq.dau = 1;
+
+        return kq;
+    }
+
+    SoNguyenLon operator-(const SoNguyenLon& other) {
+        SoNguyenLon soDoi = other;
+        soDoi.dau = -soDoi.dau;
+        return *this + soDoi;
     }
 };
-
-int main() {
-    // Test Constructor char*
-    SoNguyenLon a("123");
-    SoNguyenLon b("9");
-    
-    cout << "A: " << a << endl; // Xuất: 123
-    cout << "B: " << b << endl; // Xuất: 9
-
-    // Test Cộng
-    SoNguyenLon c = a + b;
-    cout << "A + B = " << c << endl; // Xuất: 132
-
-    // Test Nhập
-    /*
-    SoNguyenLon d;
-    cout << "Nhap so D: ";
-    cin >> d;
-    cout << "Ban vua nhap: " << d << endl;
-    */
-
-    // Test So sánh
-    if (b < a) cout << "B nho hon A" << endl;
-    else cout << "B khong nho hon A" << endl;
-
-    return 0;
-}
