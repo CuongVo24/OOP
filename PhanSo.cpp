@@ -85,5 +85,10 @@ public:
         tong.rutGon();
         return tong;
     }
-};
 
+    PhanSo operator+=(const PhanSo& other) const {
+        *this = *this + other;
+        return *this;
+    }
+
+};
