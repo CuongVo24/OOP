@@ -1,7 +1,6 @@
 #include <iostream>
-#include <algorithm> // Để dùng for_each, replace_if, fill [cite: 366]
-#include <stdexcept> // Để dùng out_of_range
-
+#include <algorithm>
+#include <stdexcept>
 using namespace std;
 
 template <class T>
@@ -14,18 +13,16 @@ private:
 
     Node* _pHead;
     Node* _pTail;
-    int _n; // Số lượng phần tử
+    int _n;
 
-    // Helper tạo node
     static Node* CreateNode(const T& value) {
-        Node* node = new Node{value, nullptr}; // [cite: 198]
+        Node* node = new Node{value, nullptr};
         return node;
     }
 
 public:
-    SLList() : _pHead(nullptr), _pTail(nullptr), _n(0) {} // [cite: 236]
+    SLList() : _pHead(nullptr), _pTail(nullptr), _n(0) {}
 
-    // 1. Destructor: Xóa sạch bộ nhớ [cite: 238]
     ~SLList() {
         Clear();
     }
@@ -36,7 +33,6 @@ public:
         }
     }
 
-    // 2. AddHead: Thêm vào đầu [cite: 279]
     void AddHead(const T& value) {
         Node* node = CreateNode(value);
         if (node == nullptr) return;
@@ -50,7 +46,6 @@ public:
         _n++;
     }
 
-    // AddTail (Đã có trong đề, viết lại cho đủ) [cite: 261]
     void AddTail(const T& value) {
         Node* node = CreateNode(value);
         if (node == nullptr) return;
@@ -63,7 +58,6 @@ public:
         _n++;
     }
 
-    // 3. RemoveHead: Xóa đầu [cite: 283]
     void RemoveHead() {
         if (_pHead == nullptr) return;
         Node* temp = _pHead;
@@ -73,7 +67,6 @@ public:
         _n--;
     }
 
-    // 4. RemoveTail: Xóa đuôi (Cần duyệt vì là DSLK đơn) [cite: 293]
     void RemoveTail() {
         if (_pHead == nullptr) return;
         if (_pHead == _pTail) {
@@ -91,11 +84,9 @@ public:
         _n--;
     }
 
-    // --- ITERATOR CLASS DEFINITION [cite: 298] ---
     class Iterator {
     public:
-        // Iterator Traits cho STL
-        using iterator_category = forward_iterator_tag; // [cite: 303]
+        using iterator_category = forward_iterator_tag;
         using difference_type = ptrdiff_t;
         using value_type = T;
         using pointer = T*;
@@ -107,26 +98,23 @@ public:
     public:
         Iterator(Node* node = nullptr) : current_node(node) {}
 
-        // Toán tử * (dereference) [cite: 313]
         reference operator*() const {
             if (!current_node) throw out_of_range("Dereferencing end iterator");
             return current_node->_info;
         }
 
-        // Toán tử ++ (prefix) [cite: 337]
         Iterator& operator++() {
             if (current_node) current_node = current_node->_pNext;
             return *this;
         }
 
-        // Toán tử ++ (postfix)
         Iterator operator++(int) {
             Iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        bool operator!=(const Iterator& other) const { // [cite: 364]
+        bool operator!=(const Iterator& other) const {
             return current_node != other.current_node;
         }
         
@@ -135,11 +123,10 @@ public:
         }
     };
 
-    Iterator begin() { return Iterator(_pHead); } // [cite: 216]
-    Iterator end() { return Iterator(nullptr); }   // [cite: 218]==
+    Iterator begin() { return Iterator(_pHead); }
+    Iterator end() { return Iterator(nullptr); }
 };
 
-// Các hàm hỗ trợ test STL [cite: 367-374]
 void fnAction(int val) { cout << val << ", "; }
 void fnAction2(int &val) { val *= 2; }
 bool fnPredict(int val) { 
@@ -158,18 +145,17 @@ int main() {
     cout << endl;
 
     cout << "For_each (nhan doi): ";
-    for_each(l.begin(), l.end(), fnAction2); // [cite: 408]
+    for_each(l.begin(), l.end(), fnAction2);
     for_each(l.begin(), l.end(), fnAction);
     cout << endl;
 
     cout << "Replace_if (chan -> 100): ";
-    // Lưu ý: replace_if yêu cầu Forward Iterator có khả năng ghi (reference)
-    replace_if(l.begin(), l.end(), fnPredict, 100); // [cite: 414]
+    replace_if(l.begin(), l.end(), fnPredict, 100);
     for_each(l.begin(), l.end(), fnAction);
     cout << endl;
 
     cout << "Fill (123): ";
-    fill(l.begin(), l.end(), 123); // [cite: 418]
+    fill(l.begin(), l.end(), 123);
     for_each(l.begin(), l.end(), fnAction);
     cout << endl;
 
