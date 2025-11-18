@@ -1,4 +1,3 @@
-#pragma once
 #include <iostream>
 #include <algorithm>
 
@@ -31,7 +30,6 @@ public:
     void RemoveTail();
     void clear();
 
-    // --- Iterator Access ---
     Iterator begin() {
         return Iterator(_pHead);
     }
@@ -242,8 +240,7 @@ template<class T>
 class SLList<T>::Iterator
 {
 public:
-    // Các type alias cần thiết cho iterator traits (để tương thích STL)
-    using iterator_category = std::forward_iterator_tag; // Chỉ duyệt tiến
+    using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
     using value_type = T;
     using pointer = T*;
