@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cmath>
+#include <cstdlib>
 
 
 using namespace std;
@@ -85,6 +86,57 @@ public:
         return os;
     }
 
+friend istream& operator>>(istream& is, SoNguyenLon& snl) {
+        if (snl.chuSo != nullptr) {
+            delete[] snl.chuSo;
+            snl.chuSo = nullptr;
+        }
+
+        int capacity = 16;
+        int len = 0;
+        char* buffer = new char[capacity];
+        char ch;
+
+
+        while (is.get(ch) && (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r'));
+        if (ch >= '0' && ch <= '9') {
+            buffer[len++] = ch;
+        } else {
+            delete[] buffer;
+            snl.soLuong = 1;
+            snl.chuSo = new int[1];
+            snl.chuSo[0] = 0;
+            return is;
+        }
+
+        while (is.get(ch)) {
+            if (ch >= '0' && ch <= '9') {
+                if (len >= capacity) {
+                    int newCapacity = capacity * 2;
+                    char* newBuffer = new char[newCapacity];
+                    memcpy(newBuffer, buffer, len);
+                    delete[] buffer;
+                    buffer = newBuffer;
+                    capacity = newCapacity;
+                }
+                buffer[len++] = ch;
+            } else {
+                is.putback(ch);
+                break;
+            }
+        }
+
+        snl.soLuong = len;
+        snl.chuSo = new int[snl.soLuong];
+        for (int i = 0; i < len; i++) {
+            snl.chuSo[i] = buffer[len - 1 - i] - '0'; // Trừ '0' để ra số nguyên
+        }
+
+        delete[] buffer;
+        snl.xoaSoKhong(); 
+        return is;
+    }
+
     bool operator<(const SoNguyenLon& other) const {
         if (this->soLuong != other.soLuong) {
             return this->soLuong < other.soLuong;
@@ -116,6 +168,11 @@ public:
         tong.xoaSoKhong();
         
         return tong;
+    }
+
+    SoNguyenLon operator+=(const SoNguyenLon& other) const {
+        *this = *this + other;
+        return *this;
     }
 };
 
