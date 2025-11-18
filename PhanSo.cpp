@@ -91,4 +91,30 @@ public:
         return *this;
     }
 
+PhanSo operator-(const PhanSo& other) const {
+    PhanSo hieu;
+    hieu.tu = this->tu * other.mau - other.tu * this->mau;
+    hieu.mau = this->mau * other.mau;
+    hieu.rutGon();
+    return hieu;
+}
+
+PhanSo operator*(const PhanSo& other) const {
+    PhanSo tich(this->tu * other.tu, this->mau * other.mau);
+    return tich;
+}
+
+PhanSo operator/(const PhanSo& other) const {
+    PhanSo thuong(this->tu * other.mau, this->mau * other.tu);
+    return thuong;
+}
+
+bool operator==(const PhanSo& other) const {
+    return (long long)this->tu * other.mau == (long long)other.tu * this->mau;
+}
+
+bool operator!=(const PhanSo& other) const {
+    return !(*this == other);
+}
+
 };
