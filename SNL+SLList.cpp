@@ -9,6 +9,12 @@ class SoNguyenLon {
 private:
     SLList<int> chuSo;
 
+void trim() {
+        // Giữ lại ít nhất 1 số 0 nếu kết quả là 0
+        while (chuSo.size() > 1 && chuSo.back() == 0) {
+            chuSo.RemoveTail();
+        }
+    }
 public:
     SoNguyenLon() {}
 
@@ -83,7 +89,7 @@ public:
         }
         if (nho > 0) ketQua.chuSo.push_back(nho);
         
-        return ketQua;
+        return ketQua.trim();
     }
 
 
