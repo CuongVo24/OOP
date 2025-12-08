@@ -1,153 +1,155 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <string>
 #include <cmath>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
-// ================= BASE CLASS =================
+// === 1. LỚP CƠ SỞ ===
 class HinhHocPhang {
 public:
     virtual ~HinhHocPhang() {}
-    
-    virtual void Input(istream& is) = 0;
-    virtual void Output(ostream& os) const = 0;
+    virtual void Nhap(vector<float> params) = 0;
     virtual float TinhDienTich() const = 0;
     virtual float TinhChuVi() const = 0;
-
-    friend istream& operator>>(istream& is, HinhHocPhang& h) {
-        h.Input(is);
-        return is;
-    }
-
-    friend ostream& operator<<(ostream& os, const HinhHocPhang& h) {
-        h.Output(os);
-        return os;
-    }
+    virtual string GetTenLoai() const = 0;
 };
 
-// ================= DERIVED CLASSES =================
-
-// 1. Hình Chữ Nhật
+// === 2. CÁC LỚP HÌNH CỤ THỂ ===
 class HinhChuNhat : public HinhHocPhang {
-private:
     float dai, rong;
 public:
-    void Input(istream& is) override {
-        // Format: 12.5,8.1
-        is >> dai;
-        is.ignore(); // Bỏ qua dấu phẩy
-        is >> rong;
-    }
-    void Output(ostream& os) const override {
-        os << "HCN (Dai: " << dai << ", Rong: " << rong << ")";
+    void Nhap(vector<float> params) override {
+        if (params.size() >= 2) { dai = params[0]; rong = params[1]; }
     }
     float TinhDienTich() const override { return dai * rong; }
     float TinhChuVi() const override { return (dai + rong) * 2; }
+    string GetTenLoai() const override { return "Hinh Chu Nhat"; }
 };
 
-// 2. Hình Tròn
 class HinhTron : public HinhHocPhang {
-private:
-    float banKinh;
+    float r;
 public:
-    void Input(istream& is) override {
-        is >> banKinh;
+    void Nhap(vector<float> params) override {
+        if (params.size() >= 1) r = params[0];
     }
-    void Output(ostream& os) const override {
-        os << "Hinh Tron (R: " << banKinh << ")";
-    }
-    float TinhDienTich() const override { return 3.14159 * banKinh * banKinh; }
-    float TinhChuVi() const override { return 2 * 3.14159 * banKinh; }
+    float TinhDienTich() const override { return 3.14 * r * r; }
+    float TinhChuVi() const override { return 2 * 3.14 * r; }
+    string GetTenLoai() const override { return "Hinh Tron"; }
 };
 
-// 3. Hình Tam Giác
 class HinhTamGiac : public HinhHocPhang {
-private:
     float a, b, c;
 public:
-    void Input(istream& is) override {
-        // Format: 7.4,9.4,5
-        is >> a; is.ignore();
-        is >> b; is.ignore();
-        is >> c;
-    }
-    void Output(ostream& os) const override {
-        os << "Tam Giac (" << a << ", " << b << ", " << c << ")";
+    void Nhap(vector<float> params) override {
+        if (params.size() >= 3) { a = params[0]; b = params[1]; c = params[2]; }
     }
     float TinhDienTich() const override {
-        float p = (a + b + c) / 2;
-        return sqrt(p * (p - a) * (p - b) * (p - c));
+        float p = (a + b + c) / 2; // Nửa chu vi
+        return sqrt(p * (p - a) * (p - b) * (p - c)); // Công thức Heron
     }
     float TinhChuVi() const override { return a + b + c; }
+    string GetTenLoai() const override { return "Hinh Tam Giac"; }
 };
 
-// 4. Hình Thang Vuông
 class HinhThangVuong : public HinhHocPhang {
-private:
-    float dayLon, dayBe, chieuCao;
+    float dayLon, dayBe, cao;
 public:
-    void Input(istream& is) override {
-        // Format: 16,10.5,7.9 (Giả sử thứ tự: Đáy lớn, Đáy bé, Cao)
-        is >> dayLon; is.ignore();
-        is >> dayBe; is.ignore();
-        is >> chieuCao;
-    }
-    void Output(ostream& os) const override {
-        os << "Hinh Thang Vuong (DayLon: " << dayLon << ", DayBe: " << dayBe << ", Cao: " << chieuCao << ")";
+    void Nhap(vector<float> params) override {
+        if (params.size() >= 3) { dayLon = params[0]; dayBe = params[1]; cao = params[2]; }
     }
     float TinhDienTich() const override {
-        return ((dayLon + dayBe) * chieuCao) / 2;
+        return ((dayLon + dayBe) * cao) / 2;
     }
     float TinhChuVi() const override {
-        // Tính cạnh bên huyền
-        float canhHuyen = sqrt(pow(abs(dayLon - dayBe), 2) + pow(chieuCao, 2));
-        return dayLon + dayBe + chieuCao + canhHuyen;
+        float canhHuyen = sqrt(pow(cao, 2) + pow(abs(dayLon - dayBe), 2));
+        return dayLon + dayBe + cao + canhHuyen;
+    }
+    string GetTenLoai() const override { return "Hinh Thang Vuong"; }
+};
+
+// === 3. LỚP QUẢN LÝ ===
+class QuanLyHinhHoc {
+    vector<HinhHocPhang*> dsHinh;
+public:
+    ~QuanLyHinhHoc() {
+        for (auto h : dsHinh) delete h;
+        dsHinh.clear();
+    }
+
+    void DocFile(string filename) {
+        ifstream f(filename);
+        if (!f.is_open()) return;
+
+        string line;
+        while (getline(f, line)) {
+            if (line.empty()) continue;
+            
+            // Xử lý chuỗi: "hcn: 12.5,8.1"
+            size_t pos = line.find(':');
+            string type = line.substr(0, pos);
+            string paramStr = line.substr(pos + 1);
+
+            // Parse các con số cách nhau bởi dấu phẩy
+            vector<float> params;
+            stringstream ss(paramStr);
+            string val;
+            while (getline(ss, val, ',')) {
+                params.push_back(atof(val.c_str()));
+            }
+
+            // Factory tạo đối tượng
+            HinhHocPhang* h = NULL;
+            if (type == "hcn") h = new HinhChuNhat();
+            else if (type == "htr") h = new HinhTron();
+            else if (type == "htg") h = new HinhTamGiac();
+            else if (type == "hthv") h = new HinhThangVuong();
+
+            if (h) {
+                h->Nhap(params);
+                dsHinh.push_back(h);
+            }
+        }
+        f.close();
+    }
+
+    void BaoCao() {
+        float tongDT = 0, tongCV = 0;
+        int countHCN = 0, countHTR = 0, countHTG = 0, countHTHV = 0;
+
+        for (auto h : dsHinh) {
+            tongDT += h->TinhDienTich();
+            tongCV += h->TinhChuVi();
+            string loai = h->GetTenLoai();
+            if (loai == "Hinh Chu Nhat") countHCN++;
+            else if (loai == "Hinh Tron") countHTR++;
+            else if (loai == "Hinh Tam Giac") countHTG++;
+            else if (loai == "Hinh Thang Vuong") countHTHV++;
+        }
+
+        cout << "=== BAO CAO ===" << endl;
+        cout << "So luong HCN: " << countHCN << endl;
+        cout << "So luong Hinh Tron: " << countHTR << endl;
+        cout << "So luong Tam Giac: " << countHTG << endl;
+        cout << "So luong Hinh Thang Vuong: " << countHTHV << endl;
+        cout << "Tong Dien Tich: " << tongDT << endl;
+        cout << "Tong Chu Vi: " << tongCV << endl;
     }
 };
 
-// ================= DEMO MAIN CHO BÀI 2 =================
+// === MAIN DEMO CHO BÀI 2 ===
+void DemoBai2() {
+    QuanLyHinhHoc ql;
+    ql.DocFile("hhp.txt");
+    ql.BaoCao();
+}
+
 int main() {
-    // Tạo file mẫu
-    ofstream taoFile("hhp.txt");
-    taoFile << "hcn: 12.5,8.1\n";
-    taoFile << "htr: 23.5\n";
-    taoFile << "htg: 7.4,9.4,5\n";
-    taoFile << "hthv: 16,10.5,7.9\n";
-    taoFile.close();
-
-    ifstream file("hhp.txt");
-    vector<HinhHocPhang*> dsHinh;
-    string type;
-    
-    // Logic đọc file: Đọc loại trước, sau đó loại bỏ dấu ':', rồi mới gọi operator>>
-    while (getline(file, type, ':')) {
-        HinhHocPhang* hinh = nullptr;
-        
-        // Loại bỏ khoảng trắng sau dấu hai chấm nếu có
-        // Lưu ý: getline ở trên đã 'ăn' mất dấu ':' rồi
-        
-        if (type.find("hcn") != string::npos) hinh = new HinhChuNhat();
-        else if (type.find("htr") != string::npos) hinh = new HinhTron();
-        else if (type.find("htg") != string::npos) hinh = new HinhTamGiac();
-        else if (type.find("hthv") != string::npos) hinh = new HinhThangVuong();
-
-        if (hinh != nullptr) {
-            file >> *hinh;
-            // Quan trọng: Sau khi đọc số, con trỏ file vẫn ở cuối dòng hiện tại hoặc đầu dòng mới
-            // Cần bỏ qua ký tự xuống dòng để vòng lặp sau getline đọc đúng tên loại tiếp theo
-            file.ignore(100, '\n'); 
-            dsHinh.push_back(hinh);
-        }
-    }
-
-    cout << "=== DANH SACH HINH HOC ===" << endl;
-    for (const auto& h : dsHinh) {
-        cout << *h << " -> Dien Tich: " << h->TinhDienTich() << endl;
-    }
-
-    // Dọn dẹp
-    for (auto h : dsHinh) delete h;
+    // Bạn có thể comment/uncomment để chạy từng bài
+    // DemoBai1(); 
+    cout << "-----------------" << endl;
+    DemoBai2();
     return 0;
 }
