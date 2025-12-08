@@ -6,172 +6,170 @@
 
 using namespace std;
 
-// ================= BASE CLASS =================
+// === 1. LỚP CƠ SỞ (BASE CLASS) ===
 class NhanVien {
 protected:
     string hoTen;
     string diaChi;
 
 public:
-    NhanVien() {}
-    virtual ~NhanVien() {}
+    virtual ~NhanVien() {} // Destructor ảo cực kỳ quan trọng để tránh Memory Leak
 
-    // Phương thức thuần ảo để đa hình hóa input/output
-    virtual void Input(istream& is) = 0;
-    virtual void Output(ostream& os) const = 0;
-    virtual string getLoai() const = 0; // Để nhận diện loại nhân viên
-    virtual bool isXuatSac() const = 0; // Phục vụ yêu cầu tìm nhân viên xuất sắc
-
-    // Operator friend gọi phương thức ảo
-    friend istream& operator>>(istream& is, NhanVien& nv) {
-        nv.Input(is);
-        return is;
+    // Phương thức thuần ảo (Pure Virtual) hoặc ảo
+    virtual void Nhap(string paramLine) {
+        // Xử lý chuỗi format: "Ten (DiaChi)"
+        // Tìm vị trí các dấu ngoặc
+        size_t moNgoac = paramLine.find('(');
+        size_t dongNgoac = paramLine.find(')');
+        
+        if (moNgoac != string::npos && dongNgoac != string::npos) {
+            this->hoTen = paramLine.substr(0, moNgoac);
+            // Xóa khoảng trắng thừa ở cuối tên
+            while (!hoTen.empty() && hoTen.back() == ' ') hoTen.pop_back();
+            
+            this->diaChi = paramLine.substr(moNgoac + 1, dongNgoac - moNgoac - 1);
+        }
     }
 
-    friend ostream& operator<<(ostream& os, const NhanVien& nv) {
-        nv.Output(os);
-        return os;
+    virtual void Xuat() const {
+        cout << "Ho ten: " << hoTen << " - Dia chi: " << diaChi;
     }
+
+    // Logic nghiệp vụ quan trọng: Đa hình
+    virtual bool IsXuatSac() const = 0; // Thuần ảo, bắt buộc con phải định nghĩa
 };
 
-// ================= DERIVED CLASS: NHÂN VIÊN THƯ KÝ =================
+// === 2. CÁC LỚP DẪN XUẤT (DERIVED CLASSES) ===
+
 class NhanVienThuKy : public NhanVien {
 private:
-    string chungChiNgoaiNgu;
+    string chungChiNN;
     int soBaoCao;
-
 public:
-    string getLoai() const override { return "nvtk"; }
+    void Nhap(string paramLine) override {
+        // Format: "Ten (DiaChi) [ChungChi] <SoBaoCao>"
+        
+        // Gọi lớp cha xử lý phần Tên và Địa chỉ trước
+        NhanVien::Nhap(paramLine);
 
-    bool isXuatSac() const override {
+        // Xử lý phần riêng
+        size_t moVuong = paramLine.find('[');
+        size_t dongVuong = paramLine.find(']');
+        size_t moNhon = paramLine.find('<');
+        size_t dongNhon = paramLine.find('>');
+
+        if (moVuong != string::npos && dongVuong != string::npos) {
+            this->chungChiNN = paramLine.substr(moVuong + 1, dongVuong - moVuong - 1);
+        }
+        if (moNhon != string::npos && dongNhon != string::npos) {
+            string soStr = paramLine.substr(moNhon + 1, dongNhon - moNhon - 1);
+            this->soBaoCao = atoi(soStr.c_str());
+        }
+    }
+
+    void Xuat() const override {
+        NhanVien::Xuat();
+        cout << " - Loai: Thu Ky - CC: " << chungChiNN << " - Bao cao: " << soBaoCao << endl;
+    }
+
+    bool IsXuatSac() const override {
         return soBaoCao >= 12;
-    }
-
-    void Input(istream& is) override {
-        // Format:  Tran Van A (Tp Ho Chi Minh) [Dien] <10>
-        // Lưu ý: Lúc này con trỏ file đang đứng sau chữ "nvtk: "
-        
-        // Đọc họ tên đến trước dấu '('
-        getline(is, hoTen, '('); 
-        // Xóa khoảng trắng dư ở cuối tên nếu có (tùy chọn)
-        while (!hoTen.empty() && hoTen.back() == ' ') hoTen.pop_back();
-
-        // Đọc địa chỉ đến trước dấu ')'
-        getline(is, diaChi, ')');
-
-        // Bỏ qua các ký tự cho đến khi gặp '['
-        is.ignore(100, '[');
-        getline(is, chungChiNgoaiNgu, ']');
-
-        // Bỏ qua các ký tự cho đến khi gặp '<'
-        is.ignore(100, '<');
-        is >> soBaoCao;
-        
-        // Bỏ qua ký tự '>' và xuống dòng còn lại
-        is.ignore(100, '\n');
-    }
-
-    void Output(ostream& os) const override {
-        os << "Nhan vien thu ky: " << hoTen 
-           << " - DC: " << diaChi 
-           << " - CC: " << chungChiNgoaiNgu 
-           << " - Bao cao: " << soBaoCao;
     }
 };
 
-// ================= DERIVED CLASS: NHÂN VIÊN KỸ THUẬT =================
 class NhanVienKyThuat : public NhanVien {
 private:
     string chungChiNganh;
     int soSangKien;
-
 public:
-    string getLoai() const override { return "nvkt"; }
+    void Nhap(string paramLine) override {
+        // Tái sử dụng logic parse (thực tế nên viết hàm utility tách chuỗi riêng để clean code)
+        NhanVien::Nhap(paramLine);
 
-    bool isXuatSac() const override {
+        size_t moVuong = paramLine.find('[');
+        size_t dongVuong = paramLine.find(']');
+        size_t moNhon = paramLine.find('<');
+        size_t dongNhon = paramLine.find('>');
+
+        if (moVuong != string::npos && dongVuong != string::npos) {
+            this->chungChiNganh = paramLine.substr(moVuong + 1, dongVuong - moVuong - 1);
+        }
+        if (moNhon != string::npos && dongNhon != string::npos) {
+            string soStr = paramLine.substr(moNhon + 1, dongNhon - moNhon - 1);
+            this->soSangKien = atoi(soStr.c_str());
+        }
+    }
+
+    void Xuat() const override {
+        NhanVien::Xuat();
+        cout << " - Loai: Ky Thuat - Nganh: " << chungChiNganh << " - Sang kien: " << soSangKien << endl;
+    }
+
+    bool IsXuatSac() const override {
         return soSangKien >= 6;
-    }
-
-    void Input(istream& is) override {
-        // Format tương tự: Tran Van B (Ha Noi) [IT] <5>
-        getline(is, hoTen, '(');
-        while (!hoTen.empty() && hoTen.back() == ' ') hoTen.pop_back();
-
-        getline(is, diaChi, ')');
-
-        is.ignore(100, '[');
-        getline(is, chungChiNganh, ']');
-
-        is.ignore(100, '<');
-        is >> soSangKien;
-        
-        is.ignore(100, '\n');
-    }
-
-    void Output(ostream& os) const override {
-        os << "Nhan vien ky thuat: " << hoTen 
-           << " - DC: " << diaChi 
-           << " - Nganh: " << chungChiNganh 
-           << " - Sang kien: " << soSangKien;
     }
 };
 
-// ================= DEMO MAIN CHO BÀI 1 =================
-int main() {
-    // Giả lập đọc file input.txt
-    // Trong thực tế bạn dùng: ifstream file("input.txt");
-    // Ở đây tôi tạo file mẫu để bạn copy chạy thử ngay
-    ofstream taoFile("input.txt");
-    taoFile << "nvkt: Tran Van A (Tp Ho Chi Minh) [Dien] <10>\n";
-    taoFile << "nvtk: Nguyen Thi B (Tp Ho Chi Minh) [Anh] <11>\n";
-    taoFile << "nvkt: Le Van C (Tp Ha Noi) [IT] <4>\n";
-    taoFile.close();
-
-    ifstream file("input.txt");
-    if (!file.is_open()) {
-        cerr << "Khong the mo file!" << endl;
-        return 1;
+// === 3. LỚP QUẢN LÝ (MANAGER CLASS) ===
+class CongTy {
+private:
+    vector<NhanVien*> dsNV;
+public:
+    ~CongTy() {
+        for (NhanVien* nv : dsNV) delete nv;
+        dsNV.clear();
     }
 
-    vector<NhanVien*> dsNhanVien;
-    string line;
-    
-    // Xử lý đọc file (Factory Pattern đơn giản)
-    while (getline(file, line)) {
-        if (line.empty()) continue;
-
-        stringstream ss(line);
-        string type;
-        // Đọc phần loại nhân viên (vd: "nvkt:")
-        getline(ss, type, ':'); 
-        
-        // Bỏ qua khoảng trắng sau dấu :
-        ss.ignore(); 
-
-        NhanVien* nv = nullptr;
-        if (type == "nvtk") {
-            nv = new NhanVienThuKy();
-        } else if (type == "nvkt") {
-            nv = new NhanVienKyThuat();
+    void DocFile(string filename) {
+        ifstream f(filename);
+        if (!f.is_open()) {
+            cout << "Khong the mo file!" << endl;
+            return;
         }
 
-        if (nv != nullptr) {
-            // Gọi operator>> (đa hình)
-            // Lưu ý: ss đang chứa phần còn lại của dòng (thông tin nhân viên)
-            ss >> *nv; 
-            dsNhanVien.push_back(nv);
+        string line;
+        while (getline(f, line)) {
+            if (line.empty()) continue;
+
+            // Tách phần loại nhân viên (trước dấu :)
+            size_t pos = line.find(':');
+            if (pos == string::npos) continue;
+
+            string type = line.substr(0, pos);
+            string data = line.substr(pos + 1);
+            
+            // Xóa khoảng trắng đầu chuỗi data
+            while (!data.empty() && data.front() == ' ') data.erase(0, 1);
+
+            NhanVien* nv = NULL;
+            if (type == "nvtk") {
+                nv = new NhanVienThuKy();
+            } else if (type == "nvkt") {
+                nv = new NhanVienKyThuat();
+            }
+
+            if (nv != NULL) {
+                nv->Nhap(data);
+                dsNV.push_back(nv);
+            }
+        }
+        f.close();
+    }
+
+    void XuatDSXuatSac() {
+        cout << "\n=== DANH SACH NHAN VIEN XUAT SAC ===" << endl;
+        for (size_t i = 0; i < dsNV.size(); i++) {
+            if (dsNV[i]->IsXuatSac()) {
+                dsNV[i]->Xuat();
+            }
         }
     }
+};
 
-    // Xuất danh sách dùng operator<<
-    cout << "=== DANH SACH NHAN VIEN ===" << endl;
-    for (const auto& nv : dsNhanVien) {
-        cout << *nv << endl;
-    }
-
-    // Dọn dẹp bộ nhớ
-    for (auto nv : dsNhanVien) delete nv;
-    file.close();
-
-    return 0;
+// === MAIN DEMO CHO BÀI 1 ===
+void DemoBai1() {
+    CongTy cty;
+    // Giả sử file input.txt đã có nội dung như hình
+    cty.DocFile("input.txt");
+    cty.XuatDSXuatSac();
 }
