@@ -1,23 +1,23 @@
 
 #include <iostream>
 #include <string>
-#include <cstring>
-#include <iomanip>
 
 using namespace std;
 
-// --- Class NhanVien ---
+// --- Class NhanVien (Base) ---
 class NhanVien {
-protected: // Dùng protected để lớp con có thể truy cập nếu cần
+private:
     string hoTen;
     string diaChi;
 
 public:
-    NhanVien(const string& ht = "", const string& dc = "") 
-        : hoTen(ht), diaChi(dc) {} // Member Initializer List
+    // Constructor
+    NhanVien(const string& ht = "", const string& dc = "")
+        : hoTen(ht), diaChi(dc) {} // Member Initializer List (Tối ưu hiệu năng)
 
-    virtual ~NhanVien() {} // Destructor ảo là bắt buộc khi có kế thừa
+    virtual ~NhanVien() {} // Luôn nên có virtual destructor khi làm việc với kế thừa
 
+    // Friend operator
     friend ostream& operator<<(ostream& os, const NhanVien& nv);
 };
 
@@ -26,28 +26,31 @@ ostream& operator<<(ostream& os, const NhanVien& nv) {
     return os;
 }
 
-// --- Class NhanVienKyThuat ---
+// --- Class NhanVienKyThuat (Derived) ---
 class NhanVienKyThuat : public NhanVien {
 private:
     string chungChiNganh;
 
 public:
-    NhanVienKyThuat(const string& ht = "", const string& dc = "", const string& ccn = "")
-        : NhanVien(ht, dc), chungChiNganh(ccn) {}
+    // Constructor chaining: Gọi constructor của lớp cha
+    NhanVienKyThuat(const string& ht = "", const string& dc = "", const string& cc = "")
+        : NhanVien(ht, dc), chungChiNganh(cc) {}
+
+    ~NhanVienKyThuat() {}
 
     friend ostream& operator<<(ostream& os, const NhanVienKyThuat& nvkt);
 };
 
 ostream& operator<<(ostream& os, const NhanVienKyThuat& nvkt) {
-    // Kỹ thuật tái sử dụng code của lớp cha: Ép kiểu về tham chiếu lớp cha
-    os << (const NhanVien&)nvkt; 
+    // KỸ THUẬT: Ép kiểu về lớp cha để dùng lại operator<< của cha
+    os << (NhanVien)nvkt;
+
     os << " [" << nvkt.chungChiNganh << "]";
     return os;
 }
 
-
 int main() {
-    NhanVienKyThuat nv("Nguyen Van A", "Q.5, TP.HCM", "CNTT");
-    cout << nv << endl;
+    NhanVienKyThuat nvkt("Nguyen Van A", "Q.5, TP.HCM", "CNTT");
+    cout << nvkt << endl;
     return 0;
 }
