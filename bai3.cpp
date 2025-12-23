@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 
 using namespace std;
 
@@ -30,7 +31,6 @@ public:
 };
 
 int main() {
-    cout << "\n--- VI DU 3: SINGLETON PATTERN ---" << endl;
 
     PrintConsoleDevice& print1 = PrintConsoleDevice::GetInstance();
     print1.Print("Su dung in lan 1\n");
@@ -39,12 +39,6 @@ int main() {
     PrintConsoleDevice& print2 = PrintConsoleDevice::GetInstance();
     print2.Print("Su dung in lan 2\n");
 
-    // Kiểm tra địa chỉ bộ nhớ để chứng minh 2 biến là 1
-    cout << "Dia chi print1: " << &print1 << endl;
-    cout << "Dia chi print2: " << &print2 << endl;
-    if (&print1 == &print2) {
-        cout << "-> Cung la mot doi tuong duy nhat!" << endl;
-    }
-
+    system("pause");
     return 0;
 }
