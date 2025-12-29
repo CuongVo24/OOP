@@ -1,0 +1,20 @@
+Chiến thuật 5 phút đầu trong phòng thi (Checklist)
+Copy All_in_1.h vào máy: Đảm bảo nó biên dịch được (không lỗi cú pháp).
+
+Đọc đề và định danh:
+
+Ai là Singleton? (Quản lý chung). -> Rename class TaskManager.
+
+Ai là Composite? (Chứa danh sách). -> Rename class Project.
+
+Ai là Leaf? (Đối tượng đơn lẻ). -> Rename class Task.
+
+Xác định Logic GetValue:
+
+Là Cộng dồn? -> Giữ nguyên code mẫu.
+
+Là Max/Min/Đếm? -> Mở Adaptations.h copy code.
+
+Kiểm tra Input:
+
+Chuỗi tách bằng dấu phẩy hay dấu gì? -> Sửa TaskFactory.
