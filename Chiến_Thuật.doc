@@ -1,20 +1,97 @@
-Chiến thuật 5 phút đầu trong phòng thi (Checklist)
-Copy All_in_1.h vào máy: Đảm bảo nó biên dịch được (không lỗi cú pháp).
+1. BỘ CÔNG CỤ "VŨ KHÍ" (MODULES)
+Chúng ta đã xây dựng được 2 file header cốt lõi để giải quyết 90% các dạng bài:
 
-Đọc đề và định danh:
+A. AllInOne.h (File Nền Tảng - Bắt buộc có)
+BaseObject: Lớp cha của mọi đối tượng.
 
-Ai là Singleton? (Quản lý chung). -> Rename class TaskManager.
+Chức năng: Tích hợp sẵn _name, GetValue() ảo, và operator<< nhập xuất.
 
-Ai là Composite? (Chứa danh sách). -> Rename class Project.
+Singleton<T>: Template quản lý đối tượng duy nhất.
 
-Ai là Leaf? (Đối tượng đơn lẻ). -> Rename class Task.
+Dùng khi: Thấy Manager::GetInstance(), System::GetInstance().
 
-Xác định Logic GetValue:
+CompositeNode: Quản lý danh sách con (vector<BaseObject*>).
 
-Là Cộng dồn? -> Giữ nguyên code mẫu.
+Chức năng: Tự động Add, tự động Destructor (xóa bộ nhớ), cung cấp Iterator để dùng vòng lặp for.
 
-Là Max/Min/Đếm? -> Mở Adaptations.h copy code.
+Dùng khi: Thấy quan hệ chứa đựng (Thư mục chứa File, Mạch chứa Điện trở).
 
-Kiểm tra Input:
+Utils: Bộ công cụ xử lý chuỗi.
 
-Chuỗi tách bằng dấu phẩy hay dấu gì? -> Sửa TaskFactory.
+Chức năng: Split (cắt chuỗi), ToNum (chuyển số).
+
+AppError: Class ngoại lệ kế thừa exception.
+
+Macros (DECLARE_CTOR, ENABLE_OP...): Code nhanh Constructor và Operator.
+
+B. Adaptations.h (File Biến Thể - Dùng khi gặp đề dị)
+Logic Tính Toán (GetValue variants):
+
+Tìm Max/Min (thay vì tính tổng).
+
+Tính Nghịch đảo (Mạch song song).
+
+Đếm số lượng (Tính trung bình).
+
+Logic Kiểm Tra (Singleton variants):
+
+Check trùng mã (Unique ID) bằng vector + find.
+
+Logic Parsing (AdvancedParser):
+
+Xử lý các format lạ như Name - Value, [Name] (Value).
+
+2. CHIẾN THUẬT ĐỌC ĐỀ & PHÂN TÍCH MAIN()
+Khi nhận đề, đừng cắm đầu viết class ngay. Hãy nhìn vào hàm main() và "bắt bệnh":
+Manager::GetInstance()->SetMax(...): Singleton. Copy template Singleton. Viết hàm Check trong class Manager.
+Box->Add(Item) hoặc Group->Add(SubGroup): Composite Pattern. Class Box kế thừa CompositeNode.
+Factory::Create("A, 10"): Factory. Copy Utils::Split. Check xem phân cách là dấu phẩy , hay gạch đứng `
+try { ... } catch (exception& e): Exception. Logic trong Add hoặc Factory phải có lệnh throw AppError(...).
+cout << *obj: Operator<<. BaseObject đã lo phần này, chỉ cần override hàm Xuat.
+5 + *obj hoặc obj++: Operator Overloading. Dùng Macro ENABLE_OP... hoặc viết hàm friend.
+for (auto x : *box): Iterator. CompositeNode đã hỗ trợ sẵn, không cần làm gì thêm.
+
+
+3. CÁC DẠNG BÀI CÓ THỂ RA THI (SCENARIOS)
+Dạng 1: Tích Lũy (Cộng dồn) - Dễ nhất, phổ biến nhất
+Ví dụ: Tính tổng dung lượng File, Tổng trọng lượng hàng hóa, Tổng lương.
+Logic GetValue: total += child->GetValue().
+Logic Check: Kiểm tra vượt quá giới hạn (Max Size/Load).
+
+Dạng 2: Trung Bình & Đếm - Hay gặp ở bài Quản lý nhân sự
+Ví dụ: Tính lương trung bình phòng ban.
+Cần thêm: Hàm GetCount() (ảo) ở BaseObject.
+Logic: Composite trả về tổng count của con. Leaf trả về 1.
+Công thức: Average = GetValue() / GetCount().
+Lưu ý: Cần dynamic_cast khi duyệt con để gọi GetCount.
+
+Dạng 3: Toán Học Nghịch Đảo - Bài Mạch điện
+Ví dụ: Điện trở song song.
+Logic GetValue: 1/R = 1/R1 + 1/R2....
+Lưu ý: Check chia cho 0. Hàm Add có thể cần check an toàn điện ($I=U/R$).
+
+Dạng 4: Lan Truyền Trạng Thái - Bài Smart Home
+Ví dụ: Tắt cầu dao tổng -> Tất cả thiết bị con tắt theo.
+Cần thêm: Biến _isOn trong class cha.
+Logic SetState: Khi cha set, vòng lặp gọi con set theo.
+Logic GetValue: return _isOn ? _value : 0; (Tắt thì không tính giá trị).
+
+4. NHỮNG LƯU Ý "CHẾT NGƯỜI" (PITFALLS)
+Đừng để mất điểm vì những lỗi ngớ ngẩn này:
+
+Quên virtual destructor: Trong BaseObject và CompositeNode bắt buộc phải có. Nếu không, khi delete cha, con không được xóa -> Memory Leak. (File AllInOne.h đã có sẵn).
+Logic ép kiểu (dynamic_cast): Khi cần gọi một hàm KHÔNG có trong BaseObject (ví dụ GetCount, GetMaxPrice), bắt buộc phải ép kiểu con trỏ child sang class đích mới gọi được.
+
+Sai dấu phân cách: Hàm Split mặc định cắt dấu phẩy ,. Nếu đề cho | hoặc - mà quên sửa tham số -> Crash chương trình vì không lấy được dữ liệu.
+
+Bẫy Singleton Logic:
+
+Bài Xe tải/File: Check tổng (current + new > max).
+
+Bài Nhân sự: Check trùng (find(id)). Đừng nhầm lẫn 2 logic này.
+
+Bẫy Factory:
+
+Tạo đối tượng xong nhớ return.
+
+Nếu dữ liệu sai format -> return nullptr hoặc throw exception, đừng để chạy tiếp sẽ crash.
