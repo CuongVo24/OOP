@@ -150,3 +150,62 @@ public:
         return nullptr;
     }
 };
+
+
+
+
+// MAIN.CPP
+#include "Solutions.cpp"
+
+int main() {
+    try {
+        cout << "--- TEST MACH DIEN ---" << endl;
+        
+        // 1. Singleton: NguonDien (PowerSupply)
+        // Set hiệu điện thế U = 220V.
+        // Kiểm tra an toàn: Nếu Cường độ dòng điện I = U / R_tong > 10A -> Ném Exception "Chap mach/Qua tai"
+        PowerSupply::GetInstance()->SetVoltage(220.0);
+        PowerSupply::GetInstance()->SetMaxCurrent(10.0); // Max 10A
+
+        // 2. Factory: Tạo Điện trở (Resistor)
+        // Format lạ: "R1 - 100" (Tên - Ohm) -> Cần sửa Utils::Split hoặc Factory
+        Component* r1 = ResistorFactory::Create("R1 - 100");
+        Component* r2 = ResistorFactory::Create("R2 - 100");
+        Component* r3 = ResistorFactory::Create("R3 - 50");
+
+        // 3. Composite biến thể: Mạch Song Song (ParallelCircuit)
+        // Logic: 1/R = 1/R1 + 1/R2 ...
+        // BẪY: Bạn phải dùng công thức nghịch đảo trong GetValue()
+        ParallelCircuit* paraGroup = new ParallelCircuit("Cum Song Song 1");
+        paraGroup->Add(r1);
+        paraGroup->Add(r2); 
+
+        // 4. Composite thường: Mạch Nối Tiếp (SerialCircuit)
+        // Logic: R = R1 + R2 ... (Cộng dồn bình thường)
+        SerialCircuit* mainBoard = new SerialCircuit("Mach Chinh");
+        mainBoard->Add(paraGroup); // Thêm cụm song song vào nối tiếp
+        mainBoard->Add(r3);
+
+        // 5. Operator Overloading: Nối thêm điện trở bằng toán tử +
+        // Logic: mainBoard + 10  => Thêm một điện trở ảo 10 Ohm vào mạch nối tiếp
+        // BẪY: Operator+ phải trả về cái gì để không bị leak memory hoặc sai logic?
+        // Gợi ý: Chỉ cần chỉnh value của chính mainBoard hoặc tạo Resistor mới add vào.
+        *mainBoard = *mainBoard + 20; 
+
+        // 6. In kết quả
+        // Yêu cầu: In ra sơ đồ và Tổng trở R tương đương
+        cout << *mainBoard << endl; 
+        cout << "Tong tro R = " << mainBoard->GetValue() << " Ohm" << endl;
+
+        // 7. Check Singleton
+        // Tính I = U / R. Nếu I > 10A -> Exception
+        // R đang khoảng: (100//100) + 50 + 20 = 50 + 50 + 20 = 120 Ohm.
+        // I = 220 / 120 = 1.8A (An toàn).
+        // Thử case cháy mạch: Add điện trở siêu nhỏ
+        mainBoard->Add(ResistorFactory::Create("R_Short - 1")); 
+
+    } catch (exception& e) {
+        cout << "SU CO DIEN: " << e.what() << endl;
+    }
+    return 0;
+}
