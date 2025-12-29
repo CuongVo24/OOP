@@ -9,6 +9,8 @@
 #include <exception>
 #include <iomanip>
 #include <fstream>
+#include <stdexcept>
+#include <cmath>
 
 using namespace std;
 
@@ -52,15 +54,17 @@ public:
         vector<string> res; string token; stringstream ss(s);
         while (getline(ss, token, del)) {
             // Xóa khoảng trắng thừa đầu đuôi (Trim)
-            size_t first = token.find_first_not_of(" \t");
+            size_t first = token.find_first_not_of(" \t\r\n");
             if (string::npos == first) continue;
-            size_t last = token.find_last_not_of(" \t");
+            size_t last = token.find_last_not_of(" \t\r\n");
             res.push_back(token.substr(first, (last - first + 1)));
         }
         return res;
     }
     // Chuyển chuỗi sang số an toàn (không bị crash nếu chuỗi lỗi)
-    static double ToNum(string s) { try { return stod(s); } catch(...) { return 0; } }
+    static double ToNum(string s) { 
+        try { return stod(s); } catch(...) { return 0; } 
+    }
 };
 
 // =========================================================================
