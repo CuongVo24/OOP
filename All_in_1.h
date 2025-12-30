@@ -60,6 +60,13 @@ class Date {
 public:
     int d, m, y;
     Date(int D = 1, int M = 1, int Y = 2000) : d(D), m(M), y(Y) {}
+
+    // [UPDATE 1]: Thêm toán tử so sánh ngày tháng (Cần cho bài Khuyến mãi)
+    long ToLong() const { return y*10000 + m*100 + d; } // 20251230
+    bool operator<=(const Date& other) const { return ToLong() <= other.ToLong(); }
+    bool operator<(const Date& other) const { return ToLong() < other.ToLong(); }
+    bool operator==(const Date& other) const { return ToLong() == other.ToLong(); }
+   
     // Nhập dạng d/m/y
     friend istream& operator>>(istream& is, Date& date) {
         char sep; is >> date.d >> sep >> date.m >> sep >> date.y; return is;
@@ -92,6 +99,11 @@ public:
     // - Nếu là Nhân viên -> Trả về Lương
     // - Giúp tính tổng mà KHÔNG CẦN ép kiểu (dynamic_cast) liên tục.
     virtual double GetValue() const { return 0; }
+
+    // [UPDATE 2]: Thêm hàm lấy Danh mục (Category)
+    // Mặc định rỗng. Class Product sẽ override cái này.
+    // Giúp Singleton check được loại hàng mà không cần dynamic_cast.
+    virtual string GetCategory() const { return ""; }
 
     string GetName() const { return _name; }
 };
@@ -147,6 +159,14 @@ public:
     iterator end() { return _children.end(); }
     const_iterator begin() const { return _children.begin(); }
     const_iterator end() const { return _children.end(); }
+
+    // [UPDATE 3]: Hàm sắp xếp danh sách con (Dùng cho bài E-Commerce)
+    // Nhận vào một hàm so sánh (Comparator)
+    template <typename Compare>
+    void SortChildren(Compare comp) {
+        sort(_children.begin(), _children.end(), comp);
+    }
+
 };
 
 // =========================================================================
