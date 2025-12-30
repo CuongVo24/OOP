@@ -1,0 +1,3 @@
+Nội dung: thiết kế class, constructor, operator, kế thừa, đa hình, composite, singleton, exception
+Thư viện được phép sử dụng: full STL, <iostream>, <iomanip>, <fstream>, <string>, <sstream>, <exception>, <stdexcept>, <cstdio>, <stdio.h>, <cstdlib>, <stdlib.h>, <cmath>, <math.h>, <cstring>, <string.h>
+Chương trình build lỗi sẽ 0 điểm.
