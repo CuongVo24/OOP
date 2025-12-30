@@ -1,43 +1,44 @@
 #include "AllInOne.h"
 
-// ====================================================
-// 1. SINGLETON: NGUỒN ĐIỆN (POWER SUPPLY)
-// Nhiệm vụ: Lưu U, I_max và kiểm tra an toàn điện
-// ====================================================
+// =========================================================================
+// KHU VỰC 1: SINGLETON - QUẢN LÝ NGUỒN (POWER SUPPLY)
+// [MAP TO MAIN]: PowerSupply::GetInstance()->SetVoltage(220.0);
+// [TƯ DUY]: Quản lý thông số toàn cục (U, I_max) và kiểm tra an toàn hệ thống.
+// =========================================================================
 class PowerSupply : public Singleton<PowerSupply> {
     friend class Singleton<PowerSupply>;
-    double U;    // Hiệu điện thế (Volt)
-    double I_max; // Cường độ tối đa (Ampe)
-    PowerSupply() : U(220), I_max(10) {} // Mặc định
+    double _U;    // Hiệu điện thế (V)
+    double _Imax; // Cường độ tối đa (A)
+    PowerSupply() : _U(0), _Imax(0) {}
 
 public:
-    void SetVoltage(double v) { U = v; }
-    void SetMaxCurrent(double i) { I_max = i; }
+    void SetVoltage(double v) { _U = v; }
+    void SetMaxCurrent(double i) { _Imax = i; }
 
-    // Hàm kiểm tra an toàn: Tính I = U / R
-    void CheckSafety(double R) {
-        if (R <= 0) throw AppError("Doan mach (R=0) hoac R am!");
+    // [MAP TO MAIN]: Check Singleton logic khi Add linh kiện
+    // [LOGIC]: I = U / R. Nếu I > Imax -> Cháy mạch.
+    void CheckSafety(double R_td) {
+        if (R_td <= 0) throw AppError("LOI: Doan mach hoac R am!");
         
-        double I = U / R;
-        if (I > I_max) {
-            throw AppError("QUA TAI! I = " + to_string((int)I) + "A > Max " + to_string((int)I_max) + "A");
+        double I = _U / R_td;
+        if (I > _Imax) {
+            throw AppError("QUA TAI! I=" + to_string((int)I) + "A > Max " + to_string((int)_Imax) + "A");
         }
     }
-    
-    double GetVoltage() const { return U; }
 };
 
-// ====================================================
-// 2. LEAF: ĐIỆN TRỞ (RESISTOR)
-// ====================================================
+// =========================================================================
+// KHU VỰC 2: CLASS LÁ - ĐIỆN TRỞ (RESISTOR)
+// [MAP TO MAIN]: ResistorFactory::Create("R1 - 100");
+// =========================================================================
 class Resistor : public BaseObject {
 private:
     double _ohm;
 public:
-    // Constructor
-    Resistor(string name, double ohm) : BaseObject(name), _ohm(ohm) {}
+    // [MACRO]: Tạo Constructor nhanh (BaseObject đã lo phần _name)
+    DECLARE_CTOR(Resistor, _ohm)
 
-    // Override lấy giá trị điện trở
+    // [MAP TO MAIN]: Tính toán giá trị -> Trả về số Ohm
     double GetValue() const override { return _ohm; }
 
     void Xuat(ostream& os) const override {
@@ -45,167 +46,134 @@ public:
     }
 };
 
-// ====================================================
-// 3. COMPOSITE 1: MẠCH NỐI TIẾP (SERIAL CIRCUIT)
-// Logic: R_td = R1 + R2 + ...
-// ====================================================
+// =========================================================================
+// KHU VỰC 3: COMPOSITE 1 - MẠCH NỐI TIẾP (SERIAL CIRCUIT)
+// [MAP TO MAIN]: Logic R = R1 + R2 + ...
+// =========================================================================
 class SerialCircuit : public BaseObject, public CompositeNode {
 public:
     SerialCircuit(string n) : BaseObject(n) {}
 
+    // [LOGIC TOÁN HỌC]: Cộng dồn các con
     double GetValue() const override {
         double sum = 0;
-        // Duyệt qua các phần tử con (nhờ Iterator trong AllInOne.h)
-        for (auto child : *this) {
-            sum += child->GetValue();
-        }
+        for (auto child : *this) sum += child->GetValue();
         return sum;
     }
 
-    // Override Add: Mạch nối tiếp càng thêm R càng lớn -> Luôn an toàn về I
-    // Nên có thể không cần check, hoặc check cho đúng quy trình.
-    void Add(BaseObject* obj) override {
-        if (obj) CompositeNode::Add(obj);
-    }
-
-    // XỬ LÝ TOÁN TỬ DỊ: *mainBoard = *mainBoard + 20;
-    // Ý nghĩa: Nối tiếp thêm 1 điện trở 20 Ohm vào mạch
+    // [MAP TO MAIN]: *mainBoard = *mainBoard + 20;
+    // [TƯ DUY]: Toán tử + tạo ra một điện trở ảo rồi Add vào mạch
     SerialCircuit& operator+(int ohm) {
-        // Tạo một điện trở mới và Add vào chính mình
-        string name = "R_Added_" + to_string(ohm);
+        string name = "R_ao_" + to_string(ohm);
         this->Add(new Resistor(name, (double)ohm));
-        return *this; // Trả về tham chiếu để gán lại được
+        return *this; 
     }
-
+    
+    // [MAP TO MAIN]: In ra sơ đồ
     void Xuat(ostream& os) const override {
-        os << "[NOI TIEP] " << _name << " { R_tong: " << GetValue() << " }";
+        os << "[NOI TIEP] " << _name << " (R_tong: " << GetValue() << ")";
         for (auto c : *this) os << "\n    |-- " << *c;
     }
 };
 
-// ====================================================
-// 4. COMPOSITE 2: MẠCH SONG SONG (PARALLEL CIRCUIT)
-// Logic: 1/R_td = 1/R1 + 1/R2 + ...
-// BẪY LỚN: Mạch song song càng thêm R thì R_td càng NHỎ -> Dễ quá tải I
-// ====================================================
+// =========================================================================
+// KHU VỰC 4: COMPOSITE 2 - MẠCH SONG SONG (PARALLEL CIRCUIT)
+// [MAP TO MAIN]: Logic 1/R = 1/R1 + 1/R2 ...
+// [BẪY]: Thêm R vào song song làm R_tong giảm -> I tăng -> Dễ cháy.
+// =========================================================================
 class ParallelCircuit : public BaseObject, public CompositeNode {
 public:
     ParallelCircuit(string n) : BaseObject(n) {}
 
-    // Logic tính toán khó nhất bài
+    // [LOGIC TOÁN HỌC]: Tính tổng nghịch đảo
     double GetValue() const override {
-        double invTotal = 0; // Tổng nghịch đảo
+        double invTotal = 0;
         if (begin() == end()) return 0; // Chưa có linh kiện
-
+        
         for (auto child : *this) {
             double r = child->GetValue();
             if (r > 0) invTotal += (1.0 / r);
         }
-        
-        if (invTotal == 0) return 0;
-        return 1.0 / invTotal; // Nghịch đảo lại để ra R tương đương
+        return (invTotal == 0) ? 0 : (1.0 / invTotal);
     }
 
-    // Override Add: Mạch song song thêm R sẽ làm giảm R tổng -> Cần Check
+    // [MAP TO MAIN]: Kiểm tra an toàn điện khi Add
+    // Vì R song song càng thêm càng nhỏ -> Dễ gây quá tải
     void Add(BaseObject* obj) override {
         if (obj) {
-            // Thêm tạm vào để tính R mới
-            CompositeNode::Add(obj);
+            CompositeNode::Add(obj); // Thêm trước để tính R mới
             
-            // Tính R tổng mới của cụm này
-            double newR = this->GetValue();
-
-            // Gọi Singleton kiểm tra: Với U hiện tại, R này có làm cháy mạch không?
-            // (Lưu ý: Đây là check cục bộ, giả sử cụm này chịu toàn bộ U)
+            // Gọi Singleton check ngay lập tức
+            double newR = this->GetValue(); 
             PowerSupply::GetInstance()->CheckSafety(newR);
         }
     }
 
     void Xuat(ostream& os) const override {
-        os << "[SONG SONG] " << _name << " { R_td: " << GetValue() << " }";
+        os << "[SONG SONG] " << _name << " (R_td: " << GetValue() << ")";
         for (auto c : *this) os << "\n    |== " << *c;
     }
 };
 
-// ====================================================
-// 5. FACTORY: XỬ LÝ CHUỖI "R1 - 100"
-// ====================================================
-class ResistorFactory {
+// =========================================================================
+// KHU VỰC 5: FACTORY - XỬ LÝ CHUỖI DỊ
+// [MAP TO MAIN]: Create("R1 - 100") -> Dấu gạch ngang
+// =========================================================================
+class ComponentFactory {
 public:
     static BaseObject* Create(string s) {
-        // Bước 1: Thay thế ký tự lạ '-' thành ',' để dùng Utils::Split
-        // (Đây là kỹ thuật Adaptations.h)
-        for (char &c : s) {
-            if (c == '-') c = ',';
-        }
-
-        // Bước 2: Cắt chuỗi
-        vector<string> parts = Utils::Split(s, ',');
+        // [XỬ LÝ CHUỖI]: Thay '-' thành ',' để dùng được Utils::Split
+        replace(s.begin(), s.end(), '-', ',');
         
-        if (parts.size() >= 2) {
-            string name = parts[0];
-            double ohm = Utils::ToNum(parts[1]);
-            return new Resistor(name, ohm);
+        vector<string> p = Utils::Split(s, ',');
+        if (p.size() >= 2) {
+            return new Resistor(p[0], Utils::ToNum(p[1]));
         }
         return nullptr;
     }
 };
 
-
-
-
-// MAIN.CPP
-#include "Solutions.cpp"
-
+// =========================================================================
+// KHU VỰC 6: HÀM MAIN (ĐỀ BÀI)
+// =========================================================================
+/*
 int main() {
     try {
         cout << "--- TEST MACH DIEN ---" << endl;
         
-        // 1. Singleton: NguonDien (PowerSupply)
-        // Set hiệu điện thế U = 220V.
-        // Kiểm tra an toàn: Nếu Cường độ dòng điện I = U / R_tong > 10A -> Ném Exception "Chap mach/Qua tai"
+        // 1. Setup Singleton
         PowerSupply::GetInstance()->SetVoltage(220.0);
-        PowerSupply::GetInstance()->SetMaxCurrent(10.0); // Max 10A
+        PowerSupply::GetInstance()->SetMaxCurrent(10.0);
 
-        // 2. Factory: Tạo Điện trở (Resistor)
-        // Format lạ: "R1 - 100" (Tên - Ohm) -> Cần sửa Utils::Split hoặc Factory
-        Component* r1 = ResistorFactory::Create("R1 - 100");
-        Component* r2 = ResistorFactory::Create("R2 - 100");
-        Component* r3 = ResistorFactory::Create("R3 - 50");
+        // 2. Factory tạo linh kiện (Lưu ý kiểu trả về là BaseObject*)
+        BaseObject* r1 = ComponentFactory::Create("R1 - 100");
+        BaseObject* r2 = ComponentFactory::Create("R2 - 100");
+        BaseObject* r3 = ComponentFactory::Create("R3 - 50");
 
-        // 3. Composite biến thể: Mạch Song Song (ParallelCircuit)
-        // Logic: 1/R = 1/R1 + 1/R2 ...
-        // BẪY: Bạn phải dùng công thức nghịch đảo trong GetValue()
-        ParallelCircuit* paraGroup = new ParallelCircuit("Cum Song Song 1");
+        // 3. Mạch Song Song (Composite)
+        ParallelCircuit* paraGroup = new ParallelCircuit("Cum Song Song");
         paraGroup->Add(r1);
-        paraGroup->Add(r2); 
+        paraGroup->Add(r2); // R_td = 50 Ohm
 
-        // 4. Composite thường: Mạch Nối Tiếp (SerialCircuit)
-        // Logic: R = R1 + R2 ... (Cộng dồn bình thường)
+        // 4. Mạch Nối Tiếp (Composite)
         SerialCircuit* mainBoard = new SerialCircuit("Mach Chinh");
-        mainBoard->Add(paraGroup); // Thêm cụm song song vào nối tiếp
-        mainBoard->Add(r3);
+        mainBoard->Add(paraGroup);
+        mainBoard->Add(r3); // R_tong = 50 + 50 = 100 Ohm
 
-        // 5. Operator Overloading: Nối thêm điện trở bằng toán tử +
-        // Logic: mainBoard + 10  => Thêm một điện trở ảo 10 Ohm vào mạch nối tiếp
-        // BẪY: Operator+ phải trả về cái gì để không bị leak memory hoặc sai logic?
-        // Gợi ý: Chỉ cần chỉnh value của chính mainBoard hoặc tạo Resistor mới add vào.
-        *mainBoard = *mainBoard + 20; 
+        // 5. Operator +: Thêm điện trở ảo 20 Ohm
+        *mainBoard = *mainBoard + 20; // R_tong = 120 Ohm
 
-        // 6. In kết quả
-        // Yêu cầu: In ra sơ đồ và Tổng trở R tương đương
+        // 6. Xuất kết quả
         cout << *mainBoard << endl; 
-        cout << "Tong tro R = " << mainBoard->GetValue() << " Ohm" << endl;
-
-        // 7. Check Singleton
-        // Tính I = U / R. Nếu I > 10A -> Exception
-        // R đang khoảng: (100//100) + 50 + 20 = 50 + 50 + 20 = 120 Ohm.
-        // I = 220 / 120 = 1.8A (An toàn).
-        // Thử case cháy mạch: Add điện trở siêu nhỏ
-        mainBoard->Add(ResistorFactory::Create("R_Short - 1")); 
+        
+        // 7. Test Check Singleton (Quá tải)
+        // R_ngan_mach = 1 Ohm -> R_song_song ~ 0 -> I cực lớn -> Exception
+        cout << "\n>> THU LAM DOAN MACH..." << endl;
+        paraGroup->Add(ComponentFactory::Create("R_Short - 1")); 
 
     } catch (exception& e) {
-        cout << "SU CO DIEN: " << e.what() << endl;
+        cout << "[SU CO]: " << e.what() << endl;
     }
     return 0;
 }
+*/
